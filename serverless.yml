@@ -1,0 +1,56 @@
+service: serverless-app
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-plugin-typescript
+
+custom:
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+      installPath: .dynamodb  # Ensure this path points to your extracted DynamoDB Local directory
+    stages:
+      - dev
+
+resources:
+  Resources:
+    MyDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: MyDynamoDbTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+functions:
+  createItem:
+    handler: dist/handler.createItem
+    events:
+      - http:
+          path: item
+          method: post
+
+  getItem:
+    handler: dist/handler.getItem
+    events:
+      - http:
+          path: item/{id}
+          method: get
